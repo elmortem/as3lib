@@ -1,0 +1,144 @@
+package elmortem.game.cameras {
+	import elmortem.game.entities.Entity;
+	import elmortem.game.senses.ISense;
+	import elmortem.types.Vec2;
+	import flash.geom.Rectangle;
+	
+	public class Camera2D implements ISense {
+		private var _pos:Vec2;
+		private var to:Vec2;
+		private var vel:Vec2;
+		private var _target:Entity;
+		private var speed:Number;
+		private var accel:Number;
+		private var _moving:Boolean;
+		private var rect:Rectangle;
+		
+		private var width_half:Number;
+		private var height_half:Number;
+		
+		private var _v:Vec2;
+		private var _vec:Vec2;
+		
+		public function Camera2D(width:Number, height:Number) {
+			_pos = new Vec2();
+			to = new Vec2();
+			vel = new Vec2();
+			_target = null;
+			speed = 999;
+			accel = 999;
+			_moving = false;
+			rect = new Rectangle();
+			
+			width_half = width * 0.5;
+			height_half = height * 0.5;
+			
+			_v = new Vec2();
+			_vec = new Vec2();
+		}
+		
+		public function free():void {
+			_pos = null;
+			to = null;
+			vel = null;
+			_target = null;
+			_v = null;
+			_vec = null;
+		}
+		public function get senseName():String {
+			return "camera";
+		}
+		public function update(delta:Number):void {
+			if (!_moving) {
+				trace("no moving...");
+				return;
+			}
+			var u:Vec2 = to;
+			if (_target != null) {
+				if (!_target.alive) {
+					_target = null;
+					to.setV(_pos);
+					_moving = false;
+					return;
+				}
+				u = target.pos.copy();
+				u.x = Math.max(rect.left + width_half, u.x);
+				u.x = Math.min(rect.right - width_half, u.x);
+				u.y = Math.max(rect.top + height_half, u.y);
+				u.y = Math.min(rect.bottom - height_half, u.y);
+				vel.setXY(0, 0);
+				vel.move(speed, _pos.angleTo(u));
+			}
+			var dist:Number = _pos.distanceTo(u);
+			var acc:Number = Math.max(1, dist / accel);
+			_v.setV(vel);
+			_v.mult(delta * acc);
+			if (_v.distancePowTo(Vec2.ZERO) > dist * dist) {
+				_pos.setV(u);
+				if (_target == null) {
+					_moving = false;
+				}
+			} else {
+				_v.add(_pos);
+				_pos.setV(_v);
+			}
+			
+			_vec.setV(_pos);
+			/*_vec.x = Math.max(rect.left + width_half, _vec.x);
+			_vec.x = Math.min(rect.right - width_half, _vec.x);
+			_vec.y = Math.max(rect.top + height_half, _vec.y);
+			_vec.y = Math.min(rect.bottom - height_half, _vec.y);*/
+			_vec.setXY(int(-_vec.x), int(-_vec.y));
+		}
+		
+		public function get target():Entity {
+			return _target;
+		}
+		public function get moving():Boolean {
+			return _moving;
+		}
+		public function set bounds(r:Rectangle):void {
+			rect = r.clone();
+		}
+		public function get bounds():Rectangle {
+			return rect;
+		}
+		public function get pos():Vec2 {
+			return _vec;
+		}
+		
+		public function move(x:Number, y:Number, speed:Number = -1, accel:Number = -1):void {
+			_moving = true;
+			to.setXY(x, y);
+			to.x = Math.max(rect.left + width_half, to.x);
+			to.x = Math.min(rect.right - width_half, to.x);
+			to.y = Math.max(rect.top + height_half, to.y);
+			to.y = Math.min(rect.bottom - height_half, to.y);
+			if (speed > 0) this.speed = speed;
+			if (accel > 0) this.accel = accel;
+			vel.setXY(0, 0);
+			vel.move(speed, pos.angleTo(to));
+		}
+		public function follow(entity:Entity, speed:Number = -1, accel:Number = -1):void {
+			if (entity != null && !entity.alive) entity = null;
+			_target = entity;
+			if (_target != null) _moving = true;
+			else _moving = false;
+			if (speed > 0) this.speed = speed;
+			if (accel > 0) this.accel = accel;
+		}
+		
+		public function screenToCamera(x:Number, y:Number):Vec2 {
+			var v:Vec2 = new Vec2(x, y);
+			v.x -= pos.x;
+			v.y -= pos.y;
+			return v;
+		}
+		public function cameraToScreen(x:Number, y:Number):Vec2 {
+			var v:Vec2 = new Vec2(x, y);
+			v.x += pos.x;
+			v.y += pos.y;
+			return v;
+		}
+	}
+}

@@ -1,0 +1,111 @@
+package elmortem.game.cameras {
+	import elmortem.game.entities.Entity;
+	import elmortem.game.senses.ISense;
+	import elmortem.types.Vec2;
+	import flash.geom.Rectangle;
+	
+	public class Camera2D implements ISense {
+		private var pos:Vec2;
+		private var to:Vec2;
+		private var entity:Entity;
+		private var rect:Rectangle;
+		
+		private var width:Number;
+		private var height:Number;
+		private var width_half:Number;
+		private var height_half:Number;
+		
+		private var is_moving:Boolean;
+		
+		public function Camera2D(width:Number, height:Number) {
+			pos = new Vec2();
+			to = new Vec2();
+			entity = null;
+			rect = new Rectangle(0, 0, width, height);
+			
+			this.width = width;
+			this.height = height;
+			width_half = width * 0.5;
+			height_half = height * 0.5;
+			
+			is_moving = false;
+		}
+		
+		public function free():void {
+			pos = null;
+			to = null;
+			entity = null;
+		}
+		public function get senseName():String {
+			return "camera";
+		}
+		public function update(delta:Number):void {
+			//
+			if (!is_moving) return;
+			if (entity != null) {
+				if (!entity.alive) {
+					is_moving = false;
+					return;
+				}
+				move(entity.pos.x, entity.pos.y);
+			}
+			
+			pos.x = to.x;
+			pos.y = to.y;
+			if(entity == null) is_moving = false;
+		}
+		
+		public function get target():Entity {
+			return entity;
+		}
+		public function get isMoving():Boolean {
+			return is_moving;
+		}
+		public function set bounds(r:Rectangle):void {
+			rect = r.clone();
+		}
+		public function get bounds():Rectangle {
+			return rect;
+		}
+		public function get x():int {
+			return pos.x;
+		}
+		public function get y():int {
+			return pos.y;
+		}
+		
+		public function move(x:Number, y:Number, speed:Number = -1, accel:Number = -1):void {
+			to.setXY(x, y);
+			to.x = Math.max(rect.left + width_half, to.x);
+			to.x = Math.min(rect.right - width_half, to.x);
+			to.y = Math.max(rect.top + height_half, to.y);
+			to.y = Math.min(rect.bottom - height_half, to.y);
+			to.x = -to.x;
+			to.y = -to.y;
+			//if (Math.abs(pos.x - to.x) < 150 && Math.abs(pos.y - to.y) < 150) {
+			//	return;
+			//}
+			
+			is_moving = true;
+		}
+		public function follow(entity:Entity, speed:Number = -1, accel:Number = -1):void {
+			if (entity != null && !entity.alive) entity = null;
+			this.entity = entity;
+			if (this.entity != null) is_moving = true;
+			else is_moving = false;
+		}
+		
+		public function screenToCamera(x:Number, y:Number):Vec2 {
+			var v:Vec2 = new Vec2(x, y);
+			v.x -= pos.x;
+			v.y -= pos.y;
+			return v;
+		}
+		public function cameraToScreen(x:Number, y:Number):Vec2 {
+			var v:Vec2 = new Vec2(x, y);
+			v.x += pos.x + rect.x;
+			v.y += pos.y + rect.y;
+			return v;
+		}
+	}
+}

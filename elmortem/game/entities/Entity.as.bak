@@ -1,0 +1,40 @@
+package elmortem.game.entities {
+	import elmortem.game.Simulation;
+	import flash.events.EventDispatcher;
+	
+	public class Entity extends EventDispatcher {
+		static private var _ids:uint = 0;
+		private var pId:uint;
+		private var pName:String;
+		private var pAlive:Boolean;
+		private var pSim:Simulation;
+		public var attr:Object;
+		
+		public function Entity(attr:Object) {
+			this.attr = attr;
+			pId = _ids++;
+			pName = (attr.name != null)?attr.name:"entity" + pId;
+			pAlive = true;
+		}
+		public function init(sim:Simulation):void {
+			this.pSim = sim;
+		}
+		public function free():void {
+			attr = null;
+		}
+		public function die():void {
+			if(!pAlive) return;
+			pAlive = false;
+			dispatchEvent(new EntityEvent(this, EntityEvent.DEAD));
+		}
+		public function update(delta:Number):void {
+		}
+		public function render():void {
+		}
+		
+		public function get id():uint { return pId; }
+		public function get name():String { return pName; }
+		public function get alive():Boolean { return pAlive; }
+		public function get sim():Simulation { return pSim; }
+	}
+}
